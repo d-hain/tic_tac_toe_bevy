@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::WorldInspectorPlugin;
 
 //region Bevy Book - Getting Started
 // #[derive(Component)]
@@ -61,7 +62,7 @@ use bevy::prelude::*;
 // }
 //endregion
 
-const FIELD_COLOR: Color = Color::rgb(0.960784, 0.643137, 0.258823);
+
 
 fn main() {
     App::new()
@@ -72,7 +73,9 @@ fn main() {
             },
             ..default()
         }))
-        .add_startup_system(setup)
+        .add_plugin(WorldInspectorPlugin::new())
+        .add_startup_system(setup_camera)
+        .add_startup_system(setup_scene)
         .add_system(field_click_system)
         .run();
 }
@@ -89,13 +92,19 @@ fn field_click_system(
     }
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // ui camera
-    commands.spawn(Camera2dBundle::default());
+fn spawn_field(
+    commands: &mut Commands,
+    size: Size,
+    background_color: BackgroundColor,
+    text: impl Into<String>,
+    text_font: Handle<Font>,
+    text_font_size: f32,
+    text_font_color: Color,
+) {
     commands
         .spawn(ButtonBundle {
             style: Style {
-                size: Size::new(Val::Px(150.), Val::Px(65.)),
+                size,
                 // center button
                 margin: UiRect::all(Val::Auto),
                 // center child text vertically and horizontally
@@ -104,18 +113,54 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 border: UiRect::all(Val::Px(10.)),
                 ..default()
             },
-            background_color: FIELD_COLOR.into(),
+            background_color,
             ..default()
         })
+        .insert(Name::new("Field"))
         // child text
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                "BUTON",
-                TextStyle {
-                    font: asset_server.load("ComicSansMS3.ttf"),
-                    font_size: 40.,
-                    color: Color::BLACK,
-                },
-            ));
+            parent
+                .spawn(TextBundle::from_section(
+                    text,
+                    TextStyle {
+                        font: text_font,
+                        font_size: text_font_size,
+                        color: text_font_color,
+                    },
+                ))
+                .insert(Name::new("Field Text"));
         });
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands
+        .spawn(Camera2dBundle::default())
+        .insert(Name::new("Main Camera"));
+}
+
+fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let field_color = Color::rgb(0.960784, 0.643137, 0.258823);
+    let field_size = Size::new(Val::Px(150.), Val::Px(65.));
+    let field_font = "ComicSansMS3.ttf";
+    let field_font_size = 40.;
+    let field_font_color = Color::BLACK;
+    
+    spawn_field(
+        &mut commands,
+        field_size,
+        field_color.into(),
+        "INSANE BUTTON",
+        asset_server.load(field_font),
+        40.,
+        Color::BLACK,
+    );
+    spawn_field(
+        &mut commands,
+        field_size,
+        field_color.into(),
+        "INSANE BUTTON",
+        asset_server.load(field_font),
+        field_font_size,
+        field_font_color,
+    );
 }
