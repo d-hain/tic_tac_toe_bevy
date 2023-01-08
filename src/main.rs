@@ -96,6 +96,7 @@ fn spawn_field(
     commands: &mut Commands,
     size: Size,
     background_color: BackgroundColor,
+    absolute_position: UiRect,
     text: impl Into<String>,
     text_font: Handle<Font>,
     text_font_size: f32,
@@ -105,12 +106,11 @@ fn spawn_field(
         .spawn(ButtonBundle {
             style: Style {
                 size,
-                // center button
-                margin: UiRect::all(Val::Auto),
                 // center child text vertically and horizontally
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                border: UiRect::all(Val::Px(10.)),
+                position_type: PositionType::Absolute,
+                position: absolute_position,
                 ..default()
             },
             background_color,
@@ -145,22 +145,21 @@ fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     let field_font_size = 40.;
     let field_font_color = Color::BLACK;
     
-    spawn_field(
-        &mut commands,
-        field_size,
-        field_color.into(),
-        "INSANE BUTTON",
-        asset_server.load(field_font),
-        40.,
-        Color::BLACK,
-    );
-    spawn_field(
-        &mut commands,
-        field_size,
-        field_color.into(),
-        "INSANE BUTTON",
-        asset_server.load(field_font),
-        field_font_size,
-        field_font_color,
-    );
+    for _idx in 0..9 {
+        spawn_field(
+            &mut commands,
+            field_size,
+            field_color.into(),
+            UiRect {
+                left: Default::default(),
+                right: Default::default(),
+                top: Default::default(),
+                bottom: Default::default(),
+            },
+            "INSANE BUTTON",
+            asset_server.load(field_font),
+            field_font_size,
+            field_font_color,
+        );
+    }
 }
