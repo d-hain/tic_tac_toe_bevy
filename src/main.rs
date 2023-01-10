@@ -62,7 +62,7 @@ use bevy_inspector_egui::WorldInspectorPlugin;
 // }
 //endregion
 
-
+const FIELD_SIZE: f32 = 50.0;
 
 fn main() {
     App::new()
@@ -140,26 +140,27 @@ fn setup_camera(mut commands: Commands) {
 
 fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     let field_color = Color::rgb(0.960784, 0.643137, 0.258823);
-    let field_size = Size::new(Val::Px(150.), Val::Px(65.));
+    let field_size = Size::new(Val::Px(FIELD_SIZE), Val::Px(FIELD_SIZE));
     let field_font = "ComicSansMS3.ttf";
-    let field_font_size = 40.;
+    let field_font_size = 40.0;
     let field_font_color = Color::BLACK;
     
-    for _idx in 0..9 {
-        spawn_field(
-            &mut commands,
-            field_size,
-            field_color.into(),
-            UiRect {
-                left: Default::default(),
-                right: Default::default(),
-                top: Default::default(),
-                bottom: Default::default(),
-            },
-            "INSANE BUTTON",
-            asset_server.load(field_font),
-            field_font_size,
-            field_font_color,
-        );
+    for x in 0..3 {
+        for y in 0..3 {
+            spawn_field(
+                &mut commands,
+                field_size,
+                field_color.into(),
+                UiRect {
+                    left: Val::Px((FIELD_SIZE + FIELD_SIZE / 10.0) * y as f32),
+                    top: Val::Px((FIELD_SIZE + FIELD_SIZE / 10.0) * x as f32),
+                    ..default()
+                },
+                "X",
+                asset_server.load(field_font),
+                field_font_size,
+                field_font_color,
+            );
+        }
     }
 }
