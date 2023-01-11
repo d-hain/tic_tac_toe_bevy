@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 //region Bevy Book - Getting Started
 // #[derive(Component)]
@@ -62,7 +62,13 @@ use bevy_inspector_egui::WorldInspectorPlugin;
 // }
 //endregion
 
-const FIELD_SIZE: f32 = 50.0;
+const FIELD_COLOR: Color = Color::rgb(0.960784, 0.643137, 0.258823);
+
+#[derive(Component)]
+struct FieldUiRoot;
+
+#[derive(Component)]
+struct Field;
 
 fn main() {
     App::new()
@@ -73,11 +79,46 @@ fn main() {
             },
             ..default()
         }))
-        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_scene)
+        // .add_startup_system(setup_scene)
+        .add_startup_system(test_ui_system)
         .add_system(field_click_system)
         .run();
+}
+
+fn test_ui_system(mut commands: Commands){
+   commands
+       .spawn(NodeBundle {
+           style: Style {
+               size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+               justify_content: JustifyContent::Center,
+               flex_wrap: FlexWrap::Wrap,
+               ..default()
+           },
+           background_color: Color::NONE.into(),
+           ..default()
+       })
+       .insert(FieldUiRoot)
+       .insert(Name::new("FieldUIRoot"))
+       .with_children(|parent| {
+           for _idx in 0..9 {
+               parent
+                   .spawn(ButtonBundle {
+                       style: Style {
+                           size: Size::new(Val::Percent(15.0), Val::Percent(15.0)),
+                           align_self: AlignSelf::Center,
+                           margin: UiRect::all(Val::Percent(2.0)),
+                           flex_basis: Val::Percent(25.0),
+                           ..default()
+                       },
+                       background_color: FIELD_COLOR.into(),
+                       ..default()
+                   })
+                   .insert(Field)
+                   .insert(Name::new("Field"));
+           }
+       });
 }
 
 fn field_click_system(
@@ -138,29 +179,29 @@ fn setup_camera(mut commands: Commands) {
         .insert(Name::new("Main Camera"));
 }
 
-fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let field_color = Color::rgb(0.960784, 0.643137, 0.258823);
-    let field_size = Size::new(Val::Px(FIELD_SIZE), Val::Px(FIELD_SIZE));
-    let field_font = "ComicSansMS3.ttf";
-    let field_font_size = 40.0;
-    let field_font_color = Color::BLACK;
-    
-    for x in 0..3 {
-        for y in 0..3 {
-            spawn_field(
-                &mut commands,
-                field_size,
-                field_color.into(),
-                UiRect {
-                    left: Val::Px((FIELD_SIZE + FIELD_SIZE / 10.0) * y as f32),
-                    top: Val::Px((FIELD_SIZE + FIELD_SIZE / 10.0) * x as f32),
-                    ..default()
-                },
-                "X",
-                asset_server.load(field_font),
-                field_font_size,
-                field_font_color,
-            );
-        }
-    }
-}
+// fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
+//     let field_color = Color::rgb(0.960784, 0.643137, 0.258823);
+//     let field_size = Size::new(Val::Px(FIELD_SIZE), Val::Px(FIELD_SIZE));
+//     let field_font = "ComicSansMS3.ttf";
+//     let field_font_size = 40.0;
+//     let field_font_color = Color::BLACK;
+//     
+//     for x in 0..3 {
+//         for y in 0..3 {
+//             spawn_field(
+//                 &mut commands,
+//                 field_size,
+//                 field_color.into(),
+//                 UiRect {
+//                     left: Val::Px((FIELD_SIZE + FIELD_SIZE / 10.0) * y as f32),
+//                     top: Val::Px((FIELD_SIZE + FIELD_SIZE / 10.0) * x as f32),
+//                     ..default()
+//                 },
+//                 "X",
+//                 asset_server.load(field_font),
+//                 field_font_size,
+//                 field_font_color,
+//             );
+//         }
+//     }
+// }
