@@ -11,6 +11,22 @@ struct FieldUiRoot;
 #[derive(Component)]
 struct Cell;
 
+/// Player state of the game
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+enum Player {
+    X,
+    O,
+}
+
+impl Into<String> for Player {
+    fn into(self) -> String {
+        match self {
+            Player::X => "X".to_string(),
+            Player::O => "O".to_string(),
+        }
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -22,22 +38,32 @@ fn main() {
             },
             ..default()
         }))
+        .add_state(Player::X)
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup_camera)
         .add_startup_system(setup_fields)
-        .add_system(field_click_system)
+        .add_system(cell_click_system)
         .run();
 }
 
-/// Handles clicks on any [Field](Cell)
-fn field_click_system(
+/// Handles clicks on any [Cell](Cell)
+fn cell_click_system(
     mut interaction_query: Query<(&Interaction, &Children), (Changed<Interaction>, With<Cell>)>,
     mut text_query: Query<&mut Text>,
+    mut player: ResMut<State<Player>>,
 ) {
     for (interaction, children) in &mut interaction_query {
-        let mut text = text_query.get_mut(children[0]).unwrap();
         if interaction == &Interaction::Clicked {
-            text.sections[0].value = "Test".to_string();
+            let mut text = text_query.get_mut(children[0]).unwrap();
+            let current_player = player.current().to_owned();
+            
+            text.sections[0].value = current_player.to_owned().into();
+            
+            // Switch Player
+            player.set(match current_player {
+                Player::X => Player::O,
+                Player::O => Player::X,
+            }).expect("It's not good at all that you are seeing this.");
         }
     }
 }
