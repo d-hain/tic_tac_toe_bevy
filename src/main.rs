@@ -24,7 +24,7 @@ fn main() {
         }))
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_field)
+        .add_startup_system(setup_fields)
         .add_system(field_click_system)
         .run();
 }
@@ -50,7 +50,7 @@ fn setup_camera(mut commands: Commands) {
 }
 
 /// Sets up the playing field by spawning a [FieldUiRoot](FieldUiRoot) Node and 9 [Cells](Cell)
-fn setup_field(mut commands: Commands, asset_server: Res<AssetServer>){
+fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
     commands
         // FieldUiRoot Node
         .spawn(NodeBundle {
@@ -74,9 +74,8 @@ fn setup_field(mut commands: Commands, asset_server: Res<AssetServer>){
                     // Cell Button
                     .spawn(ButtonBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(15.0), Val::Percent(15.0)),
                             align_self: AlignSelf::Center,
-                            align_content: AlignContent::Center,
+                            size: Size::new(Val::Percent(15.0), Val::Percent(15.0)),
                             margin: UiRect::all(Val::Percent(2.0)),
                             flex_basis: Val::Percent(25.0),
                             ..default()
@@ -92,13 +91,15 @@ fn setup_field(mut commands: Commands, asset_server: Res<AssetServer>){
                             .spawn(TextBundle {
                                 style: Style {
                                     align_self: AlignSelf::Center,
-                                    justify_content: JustifyContent::Center,
-                                    padding: UiRect::all(Val::Percent(5.0)),
+                                    position: UiRect {
+                                        left: Val::Percent(33.3),
+                                        ..default()
+                                    },
                                     ..default()
                                 },
-                                text: Text::from_section("X", TextStyle {
+                                text: Text::from_section("O", TextStyle {
                                     font: asset_server.load("ComicSansMS3.ttf"),
-                                    font_size: 20.0,
+                                    font_size: 69.0,
                                     color: Color::BLACK.into(),
                                 }).with_alignment(TextAlignment::CENTER),
                                 ..default()
