@@ -3,26 +3,27 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 const FIELD_COLOR: Color = Color::rgb(0.960784, 0.643137, 0.258823);
 
-/// Marker [Component](bevy::prelude::Component) for the UI root node of all [Cells](Cell)
+/// Marker [Component](bevy::prelude::Component) for the UI root node of all [Cells](Cell).
 #[derive(Component)]
 struct FieldUiRoot;
 
-/// Marker [Component](bevy::prelude::Component) for the [Cells](Cell)
+/// Marker [Component](bevy::prelude::Component) for the [Cells](Cell).
+/// Cell data is the cells state to be one [Player](PlayerState) or None.
 #[derive(Component)]
-struct Cell;
+struct Cell(Option<PlayerState>);
 
-/// Player state of the game
+/// Player state of the game.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-enum Player {
+enum PlayerState {
     X,
     O,
 }
 
-impl Into<String> for Player {
+impl Into<String> for PlayerState {
     fn into(self) -> String {
         match self {
-            Player::X => "X".to_string(),
-            Player::O => "O".to_string(),
+            PlayerState::X => "X".to_string(),
+            PlayerState::O => "O".to_string(),
         }
     }
 }
@@ -38,7 +39,7 @@ fn main() {
             },
             ..default()
         }))
-        .add_state(Player::X)
+        .add_state(PlayerState::X)
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup_camera)
         .add_startup_system(setup_fields)
@@ -46,36 +47,39 @@ fn main() {
         .run();
 }
 
-/// Handles clicks on any [Cell](Cell)
+/// Handles clicks on any [Cell](Cell).
 fn cell_click_system(
     mut interaction_query: Query<(&Interaction, &Children), (Changed<Interaction>, With<Cell>)>,
     mut text_query: Query<&mut Text>,
-    mut player: ResMut<State<Player>>,
+    mut player: ResMut<State<PlayerState>>,
 ) {
     for (interaction, children) in &mut interaction_query {
         if interaction == &Interaction::Clicked {
             let mut text = text_query.get_mut(children[0]).unwrap();
             let current_player = player.current().to_owned();
             
+            // TODO: maybe change this line with new cell state system
             text.sections[0].value = current_player.to_owned().into();
             
             // Switch Player
             player.set(match current_player {
-                Player::X => Player::O,
-                Player::O => Player::X,
+                PlayerState::X => PlayerState::O,
+                PlayerState::O => PlayerState::X,
             }).expect("It's not good at all that you are seeing this.");
         }
     }
 }
 
-/// Sets up a basic 2d camera
+// TODO: add a system to change the text of a cell when the state changes
+
+/// Sets up a basic 2d camera.
 fn setup_camera(mut commands: Commands) {
     commands
         .spawn(Camera2dBundle::default())
         .insert(Name::new("Main Camera"));
 }
 
-/// Sets up the playing field by spawning a [FieldUiRoot](FieldUiRoot) Node and 9 [Cells](Cell)
+/// Sets up the playing field by spawning a [FieldUiRoot](FieldUiRoot) Node and 9 [Cells](Cell).
 fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
     commands
         // FieldUiRoot Node
@@ -109,7 +113,7 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
                         background_color: FIELD_COLOR.into(),
                         ..default()
                     })
-                    .insert(Cell)
+                    .insert(Cell(None))
                     .insert(Name::new("Cell"))
                     .with_children(|parent| {
                         parent
@@ -123,7 +127,7 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
                                     },
                                     ..default()
                                 },
-                                text: Text::from_section("O", TextStyle {
+                                text: Text::from_section("", TextStyle {
                                     font: asset_server.load("ComicSansMS3.ttf"),
                                     font_size: 69.0,
                                     color: Color::BLACK.into(),
