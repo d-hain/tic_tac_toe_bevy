@@ -6,29 +6,39 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 const FIELD_COLOR: Color = Color::rgb(0.960784, 0.643137, 0.258823);
 
-/// Marker [Component](bevy::prelude::Component) for the UI root node of all [Cells](Cell).
+/// Marker [`Component`] for the UI root node of all [`Cell`]s.
 #[derive(Component)]
 struct FieldUiRoot;
 
-/// Marker [Component](bevy::prelude::Component) for the [Cells](Cell).
-/// Cell data is the cells state to be one [Player](PlayerState) or None.
+/// A [`Cell`] stores its current state as a [`Option`]<[`PlayerState`]>.
 #[derive(Component)]
 struct Cell(Option<PlayerState>);
+
+impl From<Cell> for String {
+    fn from(value: Cell) -> Self {
+        match value {
+            Cell(Some(PlayerState::X)) => "X".to_string(),
+            Cell(Some(PlayerState::O)) => "O".to_string(),
+            Cell(None) => "".to_string(),
+        }
+    }
+}
+
+impl From<&Cell> for String {
+    fn from(value: &Cell) -> Self {
+        match value {
+            Cell(Some(PlayerState::X)) => "X".to_string(),
+            Cell(Some(PlayerState::O)) => "O".to_string(),
+            Cell(None) => "".to_string(),
+        }
+    }
+}
 
 /// Player state of the game.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 enum PlayerState {
     X,
     O,
-}
-
-impl Into<String> for PlayerState {
-    fn into(self) -> String {
-        match self {
-            PlayerState::X => "X".to_string(),
-            PlayerState::O => "O".to_string(),
-        }
-    }
 }
 
 fn main() {
@@ -51,38 +61,36 @@ fn main() {
         .run();
 }
 
-/// Handles clicks on any [Cell](Cell).
+/// Handles clicks on any [`Cell`].
 fn cell_click_system(
-    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Cell>)>,
+    mut interaction_query: Query<(&Interaction, &mut Cell), (Changed<Interaction>, With<Cell>)>,
     mut player: ResMut<State<PlayerState>>,
 ) {
-    for interaction in &mut interaction_query {
+    for (interaction, mut cell) in &mut interaction_query {
         if interaction == &Interaction::Clicked {
             let current_player = player.current().to_owned();
-            
+
             // Switch Player
             player.set(match current_player {
                 PlayerState::X => PlayerState::O,
                 PlayerState::O => PlayerState::X,
             }).expect("player is not a PlayerState anymore?!");
+
+            let _ = cell.0.insert(current_player);
         }
     }
 }
 
-/// Changes the text of a [Cell](Cell) when its state changes.
+/// Changes the text of a [`Cell`] when its state changes.
 fn cell_state_change_system(
-    cell_query: Query<(&Cell, &Children), Changed<Cell>>, 
+    cell_query: Query<(&Cell, &Children), Changed<Cell>>, //TODO: Changed<Cell> does not really work
     mut text_query: Query<&mut Text>,
 ) {
-    println!("cell state change");
+    // println!("cell state change");
     for (cell, children) in cell_query.iter() {
         let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
-        println!("changing state");
-        text.sections[0].value = match cell {
-            Cell(Some(PlayerState::X)) => "X".to_string(),
-            Cell(Some(PlayerState::O)) => "O".to_string(),
-            Cell(None) => "".to_string(),
-        };
+        // println!("changing state");
+        text.sections[0].value = cell.into();
     }
 }
 
@@ -93,7 +101,7 @@ fn setup_camera(mut commands: Commands) {
         .insert(Name::new("Main Camera"));
 }
 
-/// Sets up the playing field by spawning a [FieldUiRoot](FieldUiRoot) Node and 9 [Cells](Cell).
+/// Sets up the playing field by spawning a [`FieldUiRoot`] Node and 9 [`Cell`].
 fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
     commands
         // FieldUiRoot Node
