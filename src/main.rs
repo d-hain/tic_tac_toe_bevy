@@ -1,3 +1,6 @@
+#![warn(clippy::unwrap_used)]
+#![allow(clippy::type_complexity)]
+
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -44,33 +47,44 @@ fn main() {
         .add_startup_system(setup_camera)
         .add_startup_system(setup_fields)
         .add_system(cell_click_system)
+        .add_system(cell_state_change_system)
         .run();
 }
 
 /// Handles clicks on any [Cell](Cell).
 fn cell_click_system(
-    mut interaction_query: Query<(&Interaction, &Children), (Changed<Interaction>, With<Cell>)>,
-    mut text_query: Query<&mut Text>,
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Cell>)>,
     mut player: ResMut<State<PlayerState>>,
 ) {
-    for (interaction, children) in &mut interaction_query {
+    for interaction in &mut interaction_query {
         if interaction == &Interaction::Clicked {
-            let mut text = text_query.get_mut(children[0]).unwrap();
             let current_player = player.current().to_owned();
-            
-            // TODO: maybe change this line with new cell state system
-            text.sections[0].value = current_player.to_owned().into();
             
             // Switch Player
             player.set(match current_player {
                 PlayerState::X => PlayerState::O,
                 PlayerState::O => PlayerState::X,
-            }).expect("It's not good at all that you are seeing this.");
+            }).expect("player is not a PlayerState anymore?!");
         }
     }
 }
 
-// TODO: add a system to change the text of a cell when the state changes
+/// Changes the text of a [Cell](Cell) when its state changes.
+fn cell_state_change_system(
+    cell_query: Query<(&Cell, &Children), Changed<Cell>>, 
+    mut text_query: Query<&mut Text>,
+) {
+    println!("cell state change");
+    for (cell, children) in cell_query.iter() {
+        let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
+        println!("changing state");
+        text.sections[0].value = match cell {
+            Cell(Some(PlayerState::X)) => "X".to_string(),
+            Cell(Some(PlayerState::O)) => "O".to_string(),
+            Cell(None) => "".to_string(),
+        };
+    }
+}
 
 /// Sets up a basic 2d camera.
 fn setup_camera(mut commands: Commands) {
