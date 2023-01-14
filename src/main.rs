@@ -1,6 +1,7 @@
 #![warn(clippy::unwrap_used)]
 #![allow(clippy::type_complexity)]
 
+use bevy::app::CoreStage::First;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -52,16 +53,19 @@ fn main() {
             },
             ..default()
         }))
-        .add_state(PlayerState::X)
         .add_plugin(WorldInspectorPlugin)
+        .add_state(PlayerState::X)
         .add_startup_system(setup_camera)
         .add_startup_system(setup_fields)
+        .add_startup_system(setup_text.after(setup_fields))
         .add_system(cell_click_system)
         .add_system(cell_state_change_system)
         .run();
 }
 
 /// Handles clicks on any [`Cell`].
+/// Changes the [`PlayerState`] of the game
+/// Changes the state of the clicked [`Cell`]
 fn cell_click_system(
     mut interaction_query: Query<(&Interaction, &mut Cell), (Changed<Interaction>, With<Cell>)>,
     mut player: ResMut<State<PlayerState>>,
@@ -101,8 +105,8 @@ fn setup_camera(mut commands: Commands) {
         .insert(Name::new("Main Camera"));
 }
 
-/// Sets up the playing field by spawning a [`FieldUiRoot`] Node and 9 [`Cell`].
-fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
+/// Sets up the playing field by spawning a [`FieldUiRoot`] Node and 9 [`Cell`]s.
+fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         // FieldUiRoot Node
         .spawn(NodeBundle {
@@ -118,7 +122,7 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
         })
         .insert(FieldUiRoot)
         .insert(Name::new("FieldUiRoot"))
-        
+
         // Cells
         .with_children(|parent| {
             for _idx in 0..9 {
@@ -152,7 +156,7 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
                                 text: Text::from_section("", TextStyle {
                                     font: asset_server.load("ComicSansMS3.ttf"),
                                     font_size: 69.0,
-                                    color: Color::BLACK.into(),
+                                    color: Color::BLACK,
                                 }).with_alignment(TextAlignment::CENTER),
                                 ..default()
                             })
@@ -161,3 +165,41 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>){
             }
         });
 }
+
+fn setup_text(mut commands: Commands, asset_server: Res<AssetServer>, field_ui_root_query: Query<(&FieldUiRoot, Entity)>) {
+    println!("bef for"); //TODO: hier wird nicht ringegangen weil er keinen FieldUiRoot findet
+    //wahrscheinlich weil das system nicht nach den setup fields passiert, TODO HIELFE
+    for (idx, (_f, field_ui_root_entity)) in field_ui_root_query.iter().enumerate() {
+        // Should only be called once as the FieldUiRoot should only exist once
+        if idx >= 1 { break; }
+        println!("samc?!");
+        setup_top_text(&mut commands, &asset_server, field_ui_root_entity);
+        setup_player_state_text(&mut commands, &asset_server);
+    }
+}
+//TODO: geht einfach alles nicht
+//text wird nicht nicht gespawned
+fn setup_top_text(commands: &mut Commands, asset_server: &AssetServer, field_ui_root_entity: Entity) {
+    println!("samg");
+    dbg!(&field_ui_root_entity);
+    println!("kekw");
+    commands
+        .spawn(TextBundle {
+            style: Style {
+                align_self: AlignSelf::FlexStart,
+                justify_content: JustifyContent::FlexStart,
+                size: Size::new(Val::Auto, Val::Auto),
+                ..default()
+            },
+            text: Text::from_section("TicTacToe", TextStyle {
+                font: asset_server.load("ComicSansMS3.ttf"),
+                font_size: 42.0,
+                color: Color::BLACK,
+            }),
+            ..default()
+        })
+        .set_parent(field_ui_root_entity)
+        .insert(Name::new("TicTacToe Text"));
+}
+
+fn setup_player_state_text(mut commands: &mut Commands, asset_server: &AssetServer) {}
