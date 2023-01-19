@@ -1,15 +1,14 @@
 #![warn(clippy::unwrap_used)]
 #![allow(clippy::type_complexity)]
 
-use bevy::app::CoreStage::First;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 const FIELD_COLOR: Color = Color::rgb(0.960784, 0.643137, 0.258823);
 
-/// Marker [`Component`] for the UI root node of all [`Cell`]s.
+/// Marker [`Component`] for the UI root node of everything.
 #[derive(Component)]
-struct FieldUiRoot;
+struct UiRoot;
 
 /// A [`Cell`] stores its current state as a [`Option`]<[`PlayerState`]>.
 #[derive(Component)]
@@ -57,7 +56,7 @@ fn main() {
         .add_state(PlayerState::X)
         .add_startup_system(setup_camera)
         .add_startup_system(setup_fields)
-        .add_startup_system(setup_text.after(setup_fields))
+        // .add_startup_system(setup_text.after(setup_fields))
         .add_system(cell_click_system)
         .add_system(cell_state_change_system)
         .run();
@@ -90,7 +89,6 @@ fn cell_state_change_system(
     cell_query: Query<(&Cell, &Children), Changed<Cell>>, //TODO: Changed<Cell> does not really work
     mut text_query: Query<&mut Text>,
 ) {
-    // println!("cell state change");
     for (cell, children) in cell_query.iter() {
         let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
         // println!("changing state");
@@ -105,10 +103,10 @@ fn setup_camera(mut commands: Commands) {
         .insert(Name::new("Main Camera"));
 }
 
-/// Sets up the playing field by spawning a [`FieldUiRoot`] Node and 9 [`Cell`]s.
+/// Sets up the playing field by spawning a [`UiRoot`] Node and 9 [`Cell`]s.
 fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        // FieldUiRoot Node
+        // UiRoot Node
         .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
@@ -120,8 +118,8 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
             background_color: Color::NONE.into(),
             ..default()
         })
-        .insert(FieldUiRoot)
-        .insert(Name::new("FieldUiRoot"))
+        .insert(UiRoot)
+        .insert(Name::new("UiRoot"))
 
         // Cells
         .with_children(|parent| {
@@ -164,25 +162,21 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
                     });
             }
         });
+    
+    // setup_text(commands, asset_server, );
 }
 
-fn setup_text(mut commands: Commands, asset_server: Res<AssetServer>, field_ui_root_query: Query<(&FieldUiRoot, Entity)>) {
-    println!("bef for"); //TODO: hier wird nicht ringegangen weil er keinen FieldUiRoot findet
-    //wahrscheinlich weil das system nicht nach den setup fields passiert, TODO HIELFE
-    for (idx, (_f, field_ui_root_entity)) in field_ui_root_query.iter().enumerate() {
-        // Should only be called once as the FieldUiRoot should only exist once
-        if idx >= 1 { break; }
-        println!("samc?!");
-        setup_top_text(&mut commands, &asset_server, field_ui_root_entity);
+fn setup_text(mut commands: Commands, asset_server: Res<AssetServer>, ui_root_query: Query<Entity, With<UiRoot>>) {
+    println!("setup");
+    for ui_root_entity in ui_root_query.iter() {
+        println!("for");
+        setup_top_text(&mut commands, &asset_server, ui_root_entity);
         setup_player_state_text(&mut commands, &asset_server);
     }
 }
-//TODO: geht einfach alles nicht
-//text wird nicht nicht gespawned
+
 fn setup_top_text(commands: &mut Commands, asset_server: &AssetServer, field_ui_root_entity: Entity) {
-    println!("samg");
-    dbg!(&field_ui_root_entity);
-    println!("kekw");
+    println!("toptext");
     commands
         .spawn(TextBundle {
             style: Style {
