@@ -1,6 +1,7 @@
 #![warn(clippy::unwrap_used)]
 #![allow(clippy::type_complexity)]
 
+use belly::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -52,6 +53,7 @@ fn main() {
             },
             ..default()
         }))
+        .add_plugin(BellyPlugin)
         .add_plugin(WorldInspectorPlugin)
         .add_state(PlayerState::X)
         .add_startup_system(setup_camera)
@@ -105,77 +107,24 @@ fn setup_camera(mut commands: Commands) {
 
 /// Sets up the playing field by spawning a [`UiRoot`] Node and 9 [`Cell`]s.
 fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands
-        // UiRoot Node
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::Center,
-                align_content: AlignContent::Center,
-                flex_wrap: FlexWrap::Wrap,
-                ..default()
-            },
-            background_color: Color::NONE.into(),
-            ..default()
-        })
-        .insert(UiRoot)
-        .insert(Name::new("UiRoot"))
-
-        // Cells
-        .with_children(|parent| {
-            for _idx in 0..9 {
-                parent
-                    // Cell Button
-                    .spawn(ButtonBundle {
-                        style: Style {
-                            align_self: AlignSelf::Center,
-                            size: Size::new(Val::Percent(15.0), Val::Percent(15.0)),
-                            margin: UiRect::all(Val::Percent(2.0)),
-                            flex_basis: Val::Percent(25.0),
-                            ..default()
-                        },
-                        background_color: FIELD_COLOR.into(),
-                        ..default()
-                    })
-                    .insert(Cell(None))
-                    .insert(Name::new("Cell"))
-                    .with_children(|parent| {
-                        parent
-                            // Cell Text
-                            .spawn(TextBundle {
-                                style: Style {
-                                    align_self: AlignSelf::Center,
-                                    position: UiRect {
-                                        left: Val::Percent(33.3),
-                                        ..default()
-                                    },
-                                    ..default()
-                                },
-                                text: Text::from_section("", TextStyle {
-                                    font: asset_server.load("ComicSansMS3.ttf"),
-                                    font_size: 69.0,
-                                    color: Color::BLACK,
-                                }).with_alignment(TextAlignment::CENTER),
-                                ..default()
-                            })
-                            .insert(Name::new("Cell Text"));
-                    });
-            }
-        });
-    
-    // setup_text(commands, asset_server, );
+    commands.add(eml! {
+       <body s:padding = "50px">
+            <button>"Belly hohoho"</button><br/>
+            <button>"Belly hahaha"</button>
+        </body>
+    });
 }
 
 fn setup_text(mut commands: Commands, asset_server: Res<AssetServer>, ui_root_query: Query<Entity, With<UiRoot>>) {
     println!("setup");
     for ui_root_entity in ui_root_query.iter() {
         println!("for");
-        setup_top_text(&mut commands, &asset_server, ui_root_entity);
+        // setup_top_text(&mut commands, &asset_server, ui_root_entity);
         setup_player_state_text(&mut commands, &asset_server);
     }
 }
 
-fn setup_top_text(commands: &mut Commands, asset_server: &AssetServer, field_ui_root_entity: Entity) {
+fn setup_top_text(commands: &mut ChildBuilder) {
     println!("toptext");
     commands
         .spawn(TextBundle {
@@ -186,13 +135,14 @@ fn setup_top_text(commands: &mut Commands, asset_server: &AssetServer, field_ui_
                 ..default()
             },
             text: Text::from_section("TicTacToe", TextStyle {
-                font: asset_server.load("ComicSansMS3.ttf"),
+                // font: asset_server.load("ComicSansMS3.ttf"),
                 font_size: 42.0,
                 color: Color::BLACK,
+                ..default()
             }),
             ..default()
         })
-        .set_parent(field_ui_root_entity)
+        // .set_parent(field_ui_root_entity)
         .insert(Name::new("TicTacToe Text"));
 }
 
