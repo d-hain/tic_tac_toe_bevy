@@ -14,26 +14,33 @@ struct UiRoot;
 /// A [`Cell`] stores its current state as a [`Option`]<[`PlayerState`]>.
 #[derive(Component)]
 struct Cell(Option<PlayerState>);
-// 
-// impl From<Cell> for String {
-//     fn from(value: Cell) -> Self {
-//         match value {
-//             Cell(Some(PlayerState::X)) => "X".to_string(),
-//             Cell(Some(PlayerState::O)) => "O".to_string(),
-//             Cell(None) => "".to_string(),
-//         }
-//     }
-// }
-// 
-// impl From<&Cell> for String {
-//     fn from(value: &Cell) -> Self {
-//         match value {
-//             Cell(Some(PlayerState::X)) => "X".to_string(),
-//             Cell(Some(PlayerState::O)) => "O".to_string(),
-//             Cell(None) => "".to_string(),
-//         }
-//     }
-// }
+
+impl From<Cell> for &str {
+    fn from(value: Cell) -> Self {
+        match value {
+            Cell(Some(PlayerState::X)) => "X",
+            Cell(Some(PlayerState::O)) => "O",
+            Cell(None) => "",
+        }
+    }
+}
+
+impl From<&Cell> for &str {
+    fn from(value: &Cell) -> Self {
+        match value {
+            Cell(Some(PlayerState::X)) => "X",
+            Cell(Some(PlayerState::O)) => "O",
+            Cell(None) => "",
+        }
+    }
+}
+
+impl IntoContent for Cell {
+    fn into_content(self, parent: Entity, world: &mut World) -> Vec<Entity> {
+        //das is mal unintuitiver syntax wtf
+        <Cell as Into<&str>>::into(self).into_content(parent, world)
+    }
+}
 
 /// Player state of the game.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -59,46 +66,48 @@ fn main() {
         .add_startup_system(setup_camera)
         .add_startup_system(setup_fields)
         // .add_startup_system(setup_text.after(setup_fields))
-        .add_system(cell_click_system)
-        .add_system(cell_state_change_system)
+        // .add_system(cell_click_system)
+        // .add_system(cell_state_change_system)
         .run();
 }
 
-// TODO: refactor with belly
+//region TODO: refactor with belly
 /// Handles clicks on any [`Cell`].
 /// Changes the [`PlayerState`] of the game
 /// Changes the state of the clicked [`Cell`]
-fn cell_click_system(
-    mut interaction_query: Query<(&Interaction, &mut Cell), (Changed<Interaction>, With<Cell>)>,
-    mut player: ResMut<State<PlayerState>>,
-) {
-    for (interaction, mut cell) in &mut interaction_query {
-        if interaction == &Interaction::Clicked {
-            let current_player = player.current().to_owned();
+// fn cell_click_system(
+//     mut interaction_query: Query<(&Interaction, &mut Cell), (Changed<Interaction>, With<Cell>)>,
+//     mut player: ResMut<State<PlayerState>>,
+// ) {
+//     for (interaction, mut cell) in &mut interaction_query {
+//         if interaction == &Interaction::Clicked {
+//             let current_player = player.current().to_owned();
+// 
+//             // Switch Player
+//             player.set(match current_player {
+//                 PlayerState::X => PlayerState::O,
+//                 PlayerState::O => PlayerState::X,
+//             }).expect("player is not a PlayerState anymore?!");
+// 
+//             let _ = cell.0.insert(current_player);
+//         }
+//     }
+// }
+//endregion
 
-            // Switch Player
-            player.set(match current_player {
-                PlayerState::X => PlayerState::O,
-                PlayerState::O => PlayerState::X,
-            }).expect("player is not a PlayerState anymore?!");
-
-            let _ = cell.0.insert(current_player);
-        }
-    }
-}
-
-// TODO: Refactor with belly
+//region TODO: Refactor with belly
 /// Changes the text of a [`Cell`] when its state changes.
-fn cell_state_change_system(
-    cell_query: Query<(&Cell, &Children), Changed<Cell>>, //TODO: Changed<Cell> does not really work
-    mut text_query: Query<&mut Text>,
-) {
-    // for (cell, children) in cell_query.iter() {
-    //     let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
-    //     // println!("changing state");
-    //     text.sections[0].value = cell.into();
-    // }
-}
+// fn cell_state_change_system(
+//     cell_query: Query<(&Cell, &Children), Changed<Cell>>, //TODO: Changed<Cell> does not really work
+//     mut text_query: Query<&mut Text>,
+// ) {
+//     for (cell, children) in cell_query.iter() {
+//         let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
+//         // println!("changing state");
+//         text.sections[0].value = cell.into();
+//     }
+// }
+//endregion
 
 /// Sets up a basic 2d camera.
 fn setup_camera(mut commands: Commands) {
@@ -118,7 +127,7 @@ fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.add(eml! {
        <body s:padding = "50px">
             <for cell in = cells>
-                <button>{cell}</button>
+                <button>{cell}</button> //TODO: not displaying?!
             </for>
         </body>
     });
