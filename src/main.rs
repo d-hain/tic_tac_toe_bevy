@@ -14,26 +14,26 @@ struct UiRoot;
 /// A [`Cell`] stores its current state as a [`Option`]<[`PlayerState`]>.
 #[derive(Component)]
 struct Cell(Option<PlayerState>);
-
-impl From<Cell> for String {
-    fn from(value: Cell) -> Self {
-        match value {
-            Cell(Some(PlayerState::X)) => "X".to_string(),
-            Cell(Some(PlayerState::O)) => "O".to_string(),
-            Cell(None) => "".to_string(),
-        }
-    }
-}
-
-impl From<&Cell> for String {
-    fn from(value: &Cell) -> Self {
-        match value {
-            Cell(Some(PlayerState::X)) => "X".to_string(),
-            Cell(Some(PlayerState::O)) => "O".to_string(),
-            Cell(None) => "".to_string(),
-        }
-    }
-}
+// 
+// impl From<Cell> for String {
+//     fn from(value: Cell) -> Self {
+//         match value {
+//             Cell(Some(PlayerState::X)) => "X".to_string(),
+//             Cell(Some(PlayerState::O)) => "O".to_string(),
+//             Cell(None) => "".to_string(),
+//         }
+//     }
+// }
+// 
+// impl From<&Cell> for String {
+//     fn from(value: &Cell) -> Self {
+//         match value {
+//             Cell(Some(PlayerState::X)) => "X".to_string(),
+//             Cell(Some(PlayerState::O)) => "O".to_string(),
+//             Cell(None) => "".to_string(),
+//         }
+//     }
+// }
 
 /// Player state of the game.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -64,6 +64,7 @@ fn main() {
         .run();
 }
 
+// TODO: refactor with belly
 /// Handles clicks on any [`Cell`].
 /// Changes the [`PlayerState`] of the game
 /// Changes the state of the clicked [`Cell`]
@@ -86,16 +87,17 @@ fn cell_click_system(
     }
 }
 
+// TODO: Refactor with belly
 /// Changes the text of a [`Cell`] when its state changes.
 fn cell_state_change_system(
     cell_query: Query<(&Cell, &Children), Changed<Cell>>, //TODO: Changed<Cell> does not really work
     mut text_query: Query<&mut Text>,
 ) {
-    for (cell, children) in cell_query.iter() {
-        let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
-        // println!("changing state");
-        text.sections[0].value = cell.into();
-    }
+    // for (cell, children) in cell_query.iter() {
+    //     let mut text = text_query.get_mut(children[0]).expect("This is probably not a Cell!");
+    //     // println!("changing state");
+    //     text.sections[0].value = cell.into();
+    // }
 }
 
 /// Sets up a basic 2d camera.
@@ -107,10 +109,17 @@ fn setup_camera(mut commands: Commands) {
 
 /// Sets up the playing field by spawning a [`UiRoot`] Node and 9 [`Cell`]s.
 fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let cells = Vec::from([
+        Cell(None), Cell(None), Cell(None),
+        Cell(None), Cell(None), Cell(None),
+        Cell(None), Cell(None), Cell(None),
+    ]);
+
     commands.add(eml! {
        <body s:padding = "50px">
-            <button>"Belly hohoho"</button><br/>
-            <button>"Belly hahaha"</button>
+            <for cell in = cells>
+                <button>{cell}</button>
+            </for>
         </body>
     });
 }
