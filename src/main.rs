@@ -1,6 +1,9 @@
 #![warn(clippy::unwrap_used)]
 #![allow(clippy::type_complexity)]
 
+extern crate core;
+
+use belly::core::eml::ParamTarget::Style;
 use belly::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -12,38 +15,27 @@ const FIELD_COLOR: Color = Color::rgb(0.960784, 0.643137, 0.258823);
 struct UiRoot;
 
 /// A [`Cell`] stores its current state as a [`Option`]<[`PlayerState`]>.
-#[derive(Component)]
+#[derive(Component, Debug, Copy, Clone)]
 struct Cell(Option<PlayerState>);
 
-impl From<Cell> for &str {
-    fn from(value: Cell) -> Self {
-        match value {
-            Cell(Some(PlayerState::X)) => "X",
-            Cell(Some(PlayerState::O)) => "O",
-            Cell(None) => "",
-        }
-    }
-}
-
-impl From<&Cell> for &str {
-    fn from(value: &Cell) -> Self {
-        match value {
-            Cell(Some(PlayerState::X)) => "X",
-            Cell(Some(PlayerState::O)) => "O",
-            Cell(None) => "",
+impl ToString for Cell {
+    fn to_string(&self) -> String {
+        match self {
+            Cell(Some(PlayerState::X)) => "X".to_string(),
+            Cell(Some(PlayerState::O)) => "O".to_string(),
+            Cell(None) => "".to_string(),
         }
     }
 }
 
 impl IntoContent for Cell {
     fn into_content(self, parent: Entity, world: &mut World) -> Vec<Entity> {
-        //das is mal unintuitiver syntax wtf
-        <Cell as Into<&str>>::into(self).into_content(parent, world)
+        self.to_string().into_content(parent, world)
     }
 }
 
 /// Player state of the game.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 enum PlayerState {
     X,
     O,
@@ -63,7 +55,7 @@ fn main() {
         .add_plugin(BellyPlugin)
         .add_plugin(WorldInspectorPlugin)
         .add_state(PlayerState::X)
-        .add_startup_system(setup_camera)
+        .add_startup_system(setup_camera_stylesheet)
         .add_startup_system(setup_fields)
         // .add_startup_system(setup_text.after(setup_fields))
         // .add_system(cell_click_system)
@@ -110,58 +102,63 @@ fn main() {
 //endregion
 
 /// Sets up a basic 2d camera.
-fn setup_camera(mut commands: Commands) {
+fn setup_camera_stylesheet(mut commands: Commands) {
     commands
         .spawn(Camera2dBundle::default())
         .insert(Name::new("Main Camera"));
+    commands.add(StyleSheet::load("stylesheet.ess"));
 }
 
 /// Sets up the playing field by spawning a [`UiRoot`] Node and 9 [`Cell`]s.
 fn setup_fields(mut commands: Commands, asset_server: Res<AssetServer>) {
     let cells = Vec::from([
         Cell(None), Cell(None), Cell(None),
-        Cell(None), Cell(None), Cell(None),
+        Cell(None), Cell(Some(PlayerState::X)), Cell(None),
         Cell(None), Cell(None), Cell(None),
     ]);
 
     commands.add(eml! {
-       <body s:padding = "50px">
-            <for cell in = cells>
-                <button>{cell}</button> //TODO: not displaying?!
-            </for>
+       <body>
+            <div>
+                <for cell in = cells>
+                    <button s:color=Color::BLACK>
+                        {cell}
+                    </button>
+                </for>
+            </div>
         </body>
     });
 }
 
-fn setup_text(mut commands: Commands, asset_server: Res<AssetServer>, ui_root_query: Query<Entity, With<UiRoot>>) {
-    println!("setup");
-    for ui_root_entity in ui_root_query.iter() {
-        println!("for");
-        // setup_top_text(&mut commands, &asset_server, ui_root_entity);
-        setup_player_state_text(&mut commands, &asset_server);
-    }
-}
-
-fn setup_top_text(commands: &mut ChildBuilder) {
-    println!("toptext");
-    commands
-        .spawn(TextBundle {
-            style: Style {
-                align_self: AlignSelf::FlexStart,
-                justify_content: JustifyContent::FlexStart,
-                size: Size::new(Val::Auto, Val::Auto),
-                ..default()
-            },
-            text: Text::from_section("TicTacToe", TextStyle {
-                // font: asset_server.load("ComicSansMS3.ttf"),
-                font_size: 42.0,
-                color: Color::BLACK,
-                ..default()
-            }),
-            ..default()
-        })
-        // .set_parent(field_ui_root_entity)
-        .insert(Name::new("TicTacToe Text"));
-}
-
-fn setup_player_state_text(mut commands: &mut Commands, asset_server: &AssetServer) {}
+// fn setup_text(mut commands: Commands, asset_server: Res<AssetServer>, ui_root_query: Query<Entity, With<UiRoot>>) {
+//     println!("setup");
+//     for ui_root_entity in ui_root_query.iter() {
+//         println!("for");
+//         // setup_top_text(&mut commands, &asset_server, ui_root_entity);
+//         setup_player_state_text(&mut commands, &asset_server);
+//     }
+// }
+// 
+// fn setup_top_text(commands: &mut ChildBuilder) {
+//     println!("toptext");
+//     commands
+//         .spawn(TextBundle {
+//             style: Style {
+//                 align_self: AlignSelf::FlexStart,
+//                 justify_content: JustifyContent::FlexStart,
+//                 size: Size::new(Val::Auto, Val::Auto),
+//                 ..default()
+//             },
+//             text: Text::from_section("TicTacToe", TextStyle {
+//                 // font: asset_server.load("ComicSansMS3.ttf"),
+//                 font_size: 42.0,
+//                 color: Color::BLACK,
+//                 ..default()
+//             }),
+//             ..default()
+//         })
+//         // .set_parent(field_ui_root_entity)
+//         .insert(Name::new("TicTacToe Text"));
+// }
+// 
+// fn setup_player_state_text(mut commands: &mut Commands, asset_server: &AssetServer) {}
